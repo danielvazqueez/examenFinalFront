@@ -6,10 +6,18 @@ if (token) {
 
 var todos = document.querySelectorAll("input[type=checkbox]");
 
+$('#logout').on('click', function(){
+  localStorage.removeItem('token');
+  window.location = './index.html'
+});
+
+
+
 function loadTodos() {
+  // empty list first
+  $('#todo-list').empty()
   $.ajax({
-    url: 'http://localhost:3000/todos',
-    // url: 'https://tuapp.herokuapp.com/todos',
+    url: 'https://todos-examen.herokuapp.com/todos',
     headers: {
         'Content-Type':'application/json',
         'Authorization': 'Bearer ' + token
@@ -17,14 +25,30 @@ function loadTodos() {
     method: 'GET',
     dataType: 'json',
     success: function(data){
-      console.log(data)
 
       for( let i = 0; i < data.length; i++) {
         // aqui va su código para agregar los elementos de la lista
-        console.log(data[i].description)
-        // algo asi:
-        // addTodo(data[i]._id, data[i].description, data[i].completed)
-        // no tienen que usar la funcion de addTodo, es un ejemplo
+        addTodo(data[i]._id, data[i].description, data[i].completed, "input"+i)
+        $('#input' + i).on('click', function(event){
+          json_to_send = {
+            "completed" : this.checked
+          };
+          json_to_send = JSON.stringify(json_to_send);
+          id = data[i]._id
+          $.ajax({
+            url: `https://todos-examen.herokuapp.com/todos/${id}`,
+            headers: {
+                'Content-Type':'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            method: 'PATCH',
+            dataType: 'json',
+            data: json_to_send,
+            error: function(error_msg) {
+              alert((error_msg['responseText']));
+            }
+          });
+        });
       }
     },
     error: function(error_msg) {
@@ -32,8 +56,6 @@ function loadTodos() {
     }
   });
 }
-
-loadTodos()
 
 
 // o con jquery
@@ -53,8 +75,7 @@ input.addEventListener('keypress', function (event) {
     };
     json_to_send = JSON.stringify(json_to_send);
     $.ajax({
-      url: 'http://localhost:3000/todos',
-      // url: 'https://tuapp.herokuapp.com/todos',
+      url: 'https://todos-examen.herokuapp.com/todos',
       headers: {
           'Content-Type':'application/json',
           'Authorization': 'Bearer ' + token
@@ -63,9 +84,8 @@ input.addEventListener('keypress', function (event) {
       dataType: 'json',
       data: json_to_send,
       success: function(data){
-        console.log(data)
         // agregar código aqui para poner los datos del todolist en el el html
-        
+        loadTodos()
       },
       error: function(error_msg) {
         alert((error_msg['responseText']));
@@ -75,7 +95,8 @@ input.addEventListener('keypress', function (event) {
   }
 })
 
+loadTodos();
 
-function addTodo(id, todoText, completed) {
-  
+function addTodo(id, todoText, completed, index) {
+  $('#todo-list').append(`<li><input id="${index}"class="inputTodo" type="checkbox" name="todo" ${completed ? "checked" : ""}><span>${todoText}</span></li>`)
 }
